@@ -213,11 +213,13 @@ namespace SlipstreamWii
             {
                 string a = vehicles[keysToCheck[i]].abbrev;
                 if (Directory.Exists(tempPath + "\\vehicle.d")) Directory.Delete(tempPath + "\\vehicle.d", true);
+                if (vehicleGeneratorList.GetItemChecked(0)) if (Directory.Exists(tempPath + "\\mpvehicle.d")) Directory.Delete(tempPath + "\\mpvehicle.d", true);
 
                 progressLabel.Text = $"Sampling files from {keysToCheck[i]}...";
 
                 // Copy Vehicle files from mkw Race folder to the temporary folder
                 string vehiclePath = mkwFilePath + $"\\Race\\Kart\\{a}-{target.abbrev}.szs";
+                string mpVehiclePath = mkwFilePath + $"\\Race\\Kart\\{a}-{target.abbrev}_4.szs";
                 if (File.Exists(vehiclePath)) File.Copy(vehiclePath, tempPath + "\\vehicle.szs", true);
                 else
                 {
@@ -228,12 +230,26 @@ namespace SlipstreamWii
                 // Extract Vehicle from copied file to a folder
                 await TaskCMD(cmdType.ExtractFile, tempPath + "\\vehicle.szs", "", true);
 
+                // [LHR] The same for MP vehicle files if true
+                if (vehicleGeneratorList.GetItemChecked(0))
+                {
+                    if (File.Exists(mpVehiclePath)) File.Copy(mpVehiclePath, tempPath + "\\mpvehicle.szs", true);
+                    else
+                    {
+                        Debug.WriteLine("Failed to find multiplayer vehicle: " + mpVehiclePath);
+                        continue;
+                    }
+                    await TaskCMD(cmdType.ExtractFile, tempPath + "\\mpvehicle.szs", "", true);
+                }
+
                 // Save the path of the extracted kart folder
                 string k = tempPath + "\\vehicle.d";
+                string m = tempPath + "\\mpvehicle.d"; //[LHR] MP vehicle add
 
                 if (Directory.Exists(k))
                 {
                     string vehicleModelPath = k + "\\kart_model.brres";
+                    //string mpVehicleModelPath = m + "\\kart_model.brres"; //[LHR] Do we need this?
                     if (File.Exists(vehicleModelPath))
                     {
                         string mod = "";
@@ -258,6 +274,9 @@ namespace SlipstreamWii
                     else Debug.WriteLine("Failed to find vehicle model: " + vehicleModelPath);
 
                     string driverModelPath = k + "\\driver_model.brres";
+                    //string kartModelPath = k + "\\kart_model.brres"; //[LHR] Do we need?
+                    string mpDriverModelPath = m + "\\driver_model.brres";
+                    //string mpKartModelPath = m + "\\kart_model.brres";
                     if (File.Exists(driverModelPath))
                     {
                         if (firstVehicleTypeByPath.ContainsKey(vehiclePath))
@@ -267,11 +286,18 @@ namespace SlipstreamWii
                             {
                                 // Simply move and rename brres
                                 File.Copy(driverModelPath, folderPath + $"\\driving_{type}.brres");
+                                if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(mpDriverModelPath, folderPath + $"\\driving_{type}_4p.brres");
                             }
                             else
                             {
                                 Directory.CreateDirectory(folderPath + $"\\driving_{type}.brres.d");
                                 await TaskCMD(cmdType.ExtractFile, driverModelPath, "", false);
+
+                                if (vehicleGeneratorList.GetItemChecked(0))
+                                {
+                                    Directory.CreateDirectory(folderPath + $"\\driving_{type}_4p.brres.d");
+                                    await TaskCMD(cmdType.ExtractFile, mpDriverModelPath, "", false);
+                                }
 
                                 // If this is the main model type, copy the brres's Model and Textures
                                 if (type.ToLower() == mainModelType.ToLower())
@@ -293,6 +319,24 @@ namespace SlipstreamWii
 
                                     //Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\LOD\\{type}");
                                     File.Move(driverModelPath + ".d\\3DModels(NW4R)\\model_lod", folderPath + $"\\driver.brres.d\\LOD_{type}\\model_lod");
+                                }
+
+                                // [LHR] Move CPU model into its respective folder
+                                if (File.Exists(mpDriverModelPath + ".d\\3DModels(NW4R)\\model_cpu") && vehicleGeneratorList.GetItemChecked(0))
+                                {
+                                    if (!Directory.Exists(folderPath + $"\\driver.brres.d\\CPU_{type}"))
+                                        Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\CPU_{type}");
+
+                                    //Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\LOD\\{type}");
+                                    File.Move(mpDriverModelPath + ".d\\3DModels(NW4R)\\model_cpu", folderPath + $"\\driver.brres.d\\CPU_{type}\\model_cpu");
+                                    /*if (File.Exists(mpKartModelPath + ".d\\3DModels(NW4R)\\model_lod"))
+                                    {
+                                        if (!Directory.Exists(folderPath + $"\\driver.brres.d\\LOD_{type}"))
+                                            Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\LOD_{type}");
+
+                                        //Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\LOD\\{type}");
+                                        File.Move(mpKartModelPath + ".d\\3DModels(NW4R)\\model_lod", folderPath + $"\\driver.brres.d\\LOD_{type}\\model_lod");
+                                    }*/
                                 }
 
                                 // Move anims into their respective brres folders
@@ -1023,7 +1067,7 @@ namespace SlipstreamWii
         private void RefreshVehicleGenerationList()
         {
             vehicleGeneratorList.Items.Clear();
-            vehicleGeneratorList.Items.Add("Multiplayer Vehicle Duplicate Models", true);
+            vehicleGeneratorList.Items.Add("Multiplayer Vehicle Models (Import Only)", true); // [LHR] Changed to multiplayer vehicle models. Copying the singleplayer archives causes the MP models to t-pose and crash when played by a player.
             vehicleGeneratorList.Items.Add("Colored Standard Vehicle Models", true);
             foreach (string vehicleType in vehicleTypes)
             {
