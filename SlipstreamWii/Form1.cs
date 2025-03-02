@@ -249,7 +249,7 @@ namespace SlipstreamWii
                 if (Directory.Exists(k))
                 {
                     string vehicleModelPath = k + "\\kart_model.brres";
-                    //string mpVehicleModelPath = m + "\\kart_model.brres"; //[LHR] Do we need this?
+                    string mpVehicleModelPath = m + "\\kart_model.brres";
                     if (File.Exists(vehicleModelPath))
                     {
                         string mod = "";
@@ -267,6 +267,11 @@ namespace SlipstreamWii
                                 Directory.Move(allkartPath + ".d\\Textures(NW4R)", vehicleModelPath + ".d\\Menu_Textures(NW4R)");
                             }
                             Directory.Delete(allkartPath + ".d", true);
+                            if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Decompile vehicle model archive and copy MP vehicle LOD to base vehicle archive
+                            {
+                                await TaskCMD(cmdType.ExtractFile, mpVehicleModelPath, "", true);
+                                File.Copy(mpVehicleModelPath + ".d\\3DModels(NW4R)\\model_lod", vehicleModelPath + ".d\\3DModels(NW4R)\\model_lod");
+                        }
                             await TaskCMD(cmdType.CreateFile, vehicleModelPath + ".d", "", true);
                         }
                         File.Copy(vehicleModelPath, folderPath + $"\\vehicles\\{keysToCheck[i].Replace(" ", "_")}.brres");
@@ -274,9 +279,7 @@ namespace SlipstreamWii
                     else Debug.WriteLine("Failed to find vehicle model: " + vehicleModelPath);
 
                     string driverModelPath = k + "\\driver_model.brres";
-                    //string kartModelPath = k + "\\kart_model.brres"; //[LHR] Do we need?
                     string mpDriverModelPath = m + "\\driver_model.brres";
-                    //string mpKartModelPath = m + "\\kart_model.brres";
                     if (File.Exists(driverModelPath))
                     {
                         if (firstVehicleTypeByPath.ContainsKey(vehiclePath))
@@ -285,15 +288,25 @@ namespace SlipstreamWii
                             if (complexSampling)
                             {
                                 // Simply move and rename brres
+
+                                if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] Add CPU
+                                {
+                                    File.Copy(driverModelPath, folderPath + $"\\driving_{type}_4p.brres"); // [LHR] For now
+
+                                    // [LHR] Todo properly extract so we don't duplicate unnecessary assets
+                                    /*await TaskCMD(cmdType.ExtractFile, mpDriverModelPath, "", false);
+                                    await TaskCMD(cmdType.ExtractFile, driverModelPath, "", false);
+                                    File.Move(mpDriverModelPath + ".d\\3DModels(NW4R)\\model_cpu", driverModelPath + $".d\\3DModels(NW4R)\\model_cpu");
+                                    await TaskCMD(cmdType.CreateFile, driverModelPath + ".d", "", true);*/
+                                }
                                 File.Copy(driverModelPath, folderPath + $"\\driving_{type}.brres");
-                                if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(mpDriverModelPath, folderPath + $"\\driving_{type}_4p.brres");
                             }
                             else
                             {
                                 Directory.CreateDirectory(folderPath + $"\\driving_{type}.brres.d");
                                 await TaskCMD(cmdType.ExtractFile, driverModelPath, "", false);
 
-                                if (vehicleGeneratorList.GetItemChecked(0))
+                                if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Decompile the MP archive to get the CPU driver
                                 {
                                     Directory.CreateDirectory(folderPath + $"\\driving_{type}_4p.brres.d");
                                     await TaskCMD(cmdType.ExtractFile, mpDriverModelPath, "", false);
@@ -329,14 +342,6 @@ namespace SlipstreamWii
 
                                     //Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\LOD\\{type}");
                                     File.Move(mpDriverModelPath + ".d\\3DModels(NW4R)\\model_cpu", folderPath + $"\\driver.brres.d\\CPU_{type}\\model_cpu");
-                                    /*if (File.Exists(mpKartModelPath + ".d\\3DModels(NW4R)\\model_lod"))
-                                    {
-                                        if (!Directory.Exists(folderPath + $"\\driver.brres.d\\LOD_{type}"))
-                                            Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\LOD_{type}");
-
-                                        //Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\LOD\\{type}");
-                                        File.Move(mpKartModelPath + ".d\\3DModels(NW4R)\\model_lod", folderPath + $"\\driver.brres.d\\LOD_{type}\\model_lod");
-                                    }*/
                                 }
 
                                 // Move anims into their respective brres folders
