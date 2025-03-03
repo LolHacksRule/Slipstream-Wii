@@ -721,7 +721,7 @@ namespace SlipstreamWii
                         CopyDirectory(dir, tempPath + $"\\{type}.brres.d\\{matchingFolder}", true);
                     }
                     await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}.brres.d", "--brres --no-compress ", true);
-                    if (vehicleGeneratorList.GetItemChecked(0)) await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}_4p.brres.d", "--brres --no-compress ", true); // [LHR] ?
+                    if (vehicleGeneratorList.GetItemChecked(0)) await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}_4p.brres.d", "--brres --no-compress ", true);
                     Directory.Delete(tempPath + $"\\anims_{type}.brres.d", true);
                     globalProgress.Value++;
                 }
@@ -920,7 +920,7 @@ namespace SlipstreamWii
                     if (File.Exists(tempPath + $"\\{type}.brres"))
                     {
                         File.Copy(tempPath + $"\\{type}.brres", tempPath + "\\vehicle.d\\driver_model.brres", true);
-                        if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(tempPath + $"\\{type}_4p.brres", tempPath + "\\mpvehicle.d\\driver_model.brres", true); // [LHR] ?
+                        if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(tempPath + $"\\{type}_4p.brres", tempPath + "\\mpvehicle.d\\driver_model.brres", true);
                     }
                     else Debug.WriteLine("Failed to find sample driver type: " + tempPath + $"\\{type}.brres");
 
@@ -938,19 +938,16 @@ namespace SlipstreamWii
                             string matchingFolder = Path.GetFileName(dir);
                             switch (matchingFolder)
                             {
-                                /*case "3DModels(NW4R)": //[LHR] Move multiplayer driver and vehicle LOD
-                                    if (vehicleGeneratorList.GetItemChecked(0))
+                                case "3DModels(NW4R)": // [LHR] Move vehicle LOD to, MP vehicles usually have 2 or three
+                                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Idk if this is the best solution, ykw this works
                                     {
-                                        if (File.Exists(dir + "\\model_lod")) File.Move(dir + "\\model_lod", tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)", true);
-                                        else
-                                        {
-                                            CopyDirectory(dir, tempPath + $"\\gameVehicle.brres.d\\{matchingFolder}", true);
-                                            CopyDirectory(dir, tempPath + $"\\gameMPVehicle.brres.d\\{matchingFolder}", true);
-                                        }
-                                        //if (!Directory.GetDirectories(dir).Contains("vehicles")) if (File.Exists(dir + "\\model_lod")) File.Move(dir + "\\model_lod", tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)", true);
-                                        //File.Copy(
+                                        Directory.CreateDirectory(tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)");
+                                        File.Move(dir + "\\model_lod", tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)\\model_lod", true);
+                                        if (File.Exists(dir + "\\handle")) File.Copy(dir + "\\handle", tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)\\handle_lod", true);
+                                        File.Copy(dir + "\\shadow", tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)\\shadow", true);
                                     }
-                                    break;*/
+                                    CopyDirectory(dir, tempPath + "\\gameVehicle.brres.d\\3DModels(NW4R)", true); //[LHR] Just copy everything else now
+                                    break;
                                 case "Textures(NW4R)":
                                     if (!Directory.GetDirectories(sampleVehiclePath + ".d").Contains(sampleVehiclePath + ".d\\Menu_Textures(NW4R)"))
                                     {
@@ -965,15 +962,6 @@ namespace SlipstreamWii
                                 case "Menu_Textures(NW4R)":
                                     CopyDirectory(dir, tempPath + "\\allkartVehicle.brres.d\\Textures(NW4R)", true);
                                     break;
-                                case "AnmTexPat(NW4R)":
-                                    if (vehicleGeneratorList.GetItemChecked(0)) Directory.Delete(tempPath + "\\gameMPVehicle.brres.d\\AnmTexPat(NW4R)", true);
-                                    break;
-                                case "AnmTexSrt(NW4R)":
-                                    if (vehicleGeneratorList.GetItemChecked(0)) Directory.Delete(tempPath + "\\gameMPVehicle.brres.d\\AnmTexSrt(NW4R)", true);
-                                    break;
-                                /*case "AnmChr(NW4R)": //Some karts have this
-                                    Directory.Delete(tempPath + "\\gameMPVehicle.brres.d\\AnmChr(NW4R)", true);
-                                    break;*/
                                 default:
                                     CopyDirectory(dir, tempPath + $"\\gameVehicle.brres.d\\{matchingFolder}", true);
                                     if (vehicleGeneratorList.GetItemChecked(0)) CopyDirectory(dir, tempPath + $"\\gameMPVehicle.brres.d\\{matchingFolder}", true);
@@ -1136,7 +1124,7 @@ namespace SlipstreamWii
         private void RefreshVehicleGenerationList()
         {
             vehicleGeneratorList.Items.Clear();
-            vehicleGeneratorList.Items.Add("Multiplayer Vehicle Models (WIP)", true); // [LHR] Changed to proper multiplayer vehicle models. Duplicating the singleplayer archives causes the MP models to t-pose and crash when played by a player.
+            vehicleGeneratorList.Items.Add("Multiplayer Vehicle Models", true); // [LHR] Changed to proper multiplayer vehicle models. Duplicating the singleplayer archives causes the MP models to t-pose and crash when played by a player.
             vehicleGeneratorList.Items.Add("Colored Standard Vehicle Models", true);
             //vehicleGeneratorList.Items.Add("LZMA Compression (Aurora+MKW-SP+LE-CODE)", false); // [LHR] Added LZMA SZS compression for Aurora, MKW-SP, and LE-CODE (COMING SOON)
             //vehicleGeneratorList.Items.Add("MKW-SP Layered (_Dif) Archive", false); // [LHR] Add support for making _Dif archives for MKW-SP. (COMING SOON)
