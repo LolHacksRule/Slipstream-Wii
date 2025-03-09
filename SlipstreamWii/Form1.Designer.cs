@@ -252,7 +252,7 @@
             label2.Name = "label2";
             label2.Size = new Size(358, 20);
             label2.TabIndex = 9;
-            label2.Text = "Files To Create";
+            label2.Text = "Settings";
             label2.TextAlign = ContentAlignment.TopCenter;
             // 
             // Form1

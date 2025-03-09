@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Xml.Linq;
 
 namespace SlipstreamWii
 {
@@ -165,6 +166,8 @@ namespace SlipstreamWii
         }
         private async void SaveSample(string path, MKW_Character target, string mainModelType)
         {
+            vehicleGeneratorList.SetItemChecked(2, false); //[LHR] Temporarily disable LZMA so we don't get an archive unreadable by modding tools
+
             // Extract a model to a temporary folder to pull files from.
             string folderPath = Path.GetDirectoryName(path) + "\\" + Path.GetFileNameWithoutExtension(path) + ".d";
             string tempPath = AppDomain.CurrentDomain.BaseDirectory + "\\Temp";
@@ -305,9 +308,6 @@ namespace SlipstreamWii
                             else
                             {
                                 Directory.CreateDirectory(folderPath + $"\\driving_{type}.brres.d");
-
-                                if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Decompile the MP archive to get the CPU driver
-                                    Directory.CreateDirectory(folderPath + $"\\driving_{type}_4p.brres.d");
 
                                 // If this is the main model type, copy the brres's Model and Textures
                                 if (type.ToLower() == mainModelType.ToLower())
@@ -700,7 +700,7 @@ namespace SlipstreamWii
                                     if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(file, tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\{Path.GetFileName(file)}");
                                 }
                             }
-                            else if (matchingFolder == $"CPU_{type}" && vehicleGeneratorList.GetItemChecked(0)) // [LHR] move CPU files into seperate archive's 3DModels Folder
+                            else if (matchingFolder == $"CPU_{type}" && vehicleGeneratorList.GetItemChecked(0)) // [LHR] Move CPU files into seperate archive's 3DModels Folder
                             {
                                 foreach (string file in Directory.GetFiles(dir))
                                 {
@@ -719,7 +719,17 @@ namespace SlipstreamWii
                     {
                         string matchingFolder = Path.GetFileName(dir);
                         CopyDirectory(dir, tempPath + $"\\{type}.brres.d\\{matchingFolder}", true);
+                        if (vehicleGeneratorList.GetItemChecked(0)) CopyDirectory(dir, tempPath + $"\\{type}_4p.brres.d\\{matchingFolder}", true); // [LHR] Copy to MP driver as well
                     }
+
+                    if (vehicleGeneratorList.GetItemChecked(0))
+                    {
+                        // [LHR] Delete stuff not used by MP drivers
+                        File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model");
+                        Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmTexPat(NW4R)", true);
+                        Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)", true);
+                    }
+
                     await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}.brres.d", "--brres --no-compress ", true);
                     if (vehicleGeneratorList.GetItemChecked(0)) await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}_4p.brres.d", "--brres --no-compress ", true);
                     Directory.Delete(tempPath + $"\\anims_{type}.brres.d", true);
@@ -734,6 +744,7 @@ namespace SlipstreamWii
                 string awardPath = outputFolder + "\\Demo\\Award.d";
                 if (Directory.Exists(awardPath))
                 {
+
                     // Get replacement targets
                     List<string> complexAwardSampling = new List<string>();
                     if (File.Exists(awardPath + $"\\{target.abbrev}.brres")) complexAwardSampling.Add("kart|");
@@ -759,6 +770,7 @@ namespace SlipstreamWii
                                     string matchingFolder = Path.GetFileName(modelDir);
                                     if (matchingFolder.EndsWith("(NW4R)")) CopyDirectory(modelDir, tempPath + $"\\AwardFromDriver.brres.d\\{matchingFolder}", true);
                                 }
+
                                 foreach (string animDir in Directory.GetDirectories(tempPath + $"\\sample.d\\award{mod}.brres.d"))
                                 {
                                     string matchingFolder = Path.GetFileName(animDir);
@@ -789,9 +801,11 @@ namespace SlipstreamWii
                                         {
                                             Directory.Delete(dir, true);
                                         }
-                                        else if (dir.EndsWith("3DModels(NW4R)"))
+                                        else if (dir.EndsWith("3DModels(NW4R)")) //[LHR] Remove the LOD and MP models
                                         {
                                             if (File.Exists(dir + "\\model_lod")) File.Delete(dir + "\\model_lod");
+                                            if (vehicleGeneratorList.GetItemChecked(0) && File.Exists(dir + "\\model_cpu"))
+                                                File.Delete(dir + "\\model_cpu");
                                         }
                                     }
                                 }
@@ -838,7 +852,7 @@ namespace SlipstreamWii
                             foreach (string dir in Directory.GetDirectories(tempPath + "\\sample.d\\driver.brres.d"))
                             {
                                 string matchingFolder = Path.GetFileName(dir);
-                                if (!matchingFolder.StartsWith("LOD_")) CopyDirectory(dir, tempPath + $"\\DriverMenu.brres.d\\{matchingFolder}", true);
+                                if (!matchingFolder.StartsWith("LOD_") && (!matchingFolder.StartsWith("CPU_") && vehicleGeneratorList.GetItemChecked(0))) CopyDirectory(dir, tempPath + $"\\DriverMenu.brres.d\\{matchingFolder}", true); //[LHR] Don't copy empty CPU folder to Driver.d
                             }
                         }
 
@@ -892,26 +906,24 @@ namespace SlipstreamWii
                     // Copy Vehicle file from mkw Race folder to the temporary folder
                     string vehiclePath = mkwFilePath + $"\\Race\\Kart\\{vehicles[keysToCheck[i]].abbrev}-{target.abbrev}.szs";
                     string mpVehiclePath = mkwFilePath + $"\\Race\\Kart\\{vehicles[keysToCheck[i]].abbrev}-{target.abbrev}_4.szs";
-                    if (File.Exists(vehiclePath)) File.Copy(vehiclePath, tempPath + "\\vehicle.szs");
+                    if (File.Exists(vehiclePath)) File.Copy(vehiclePath, tempPath + "\\vehicle.szs", true);
                     else
                     {
                         Debug.WriteLine("Failed to find vehicle: " + vehiclePath);
                         continue;
                     }
 
-                    // Move and extract this vehicle
-                    File.Copy(vehiclePath, tempPath + "\\vehicle.szs", true);
+                    // [LHR] Just extract this vehicle, removed redundant code
                     await TaskCMD(cmdType.ExtractFile, tempPath + "\\vehicle.szs", "", true);
 
                     if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] The same for the multiplayer vehicle
                     {
-                        if (File.Exists(mpVehiclePath)) File.Copy(mpVehiclePath, tempPath + "\\mpvehicle.szs");
+                        if (File.Exists(mpVehiclePath)) File.Copy(mpVehiclePath, tempPath + "\\mpvehicle.szs", true);
                         else
                         {
                             Debug.WriteLine("Failed to find multiplayer vehicle: " + mpVehiclePath);
                             continue;
                         }
-                        File.Copy(vehiclePath, tempPath + "\\mpvehicle.szs", true);
                         await TaskCMD(cmdType.ExtractFile, tempPath + "\\mpvehicle.szs", "", true);
                     }
 
@@ -920,7 +932,7 @@ namespace SlipstreamWii
                     if (File.Exists(tempPath + $"\\{type}.brres"))
                     {
                         File.Copy(tempPath + $"\\{type}.brres", tempPath + "\\vehicle.d\\driver_model.brres", true);
-                        if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(tempPath + $"\\{type}_4p.brres", tempPath + "\\mpvehicle.d\\driver_model.brres", true);
+                        if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(tempPath + $"\\{type}_4p.brres", tempPath + "\\mpvehicle.d\\driver_model.brres", true); //[LHR] No longer breaks!
                     }
                     else Debug.WriteLine("Failed to find sample driver type: " + tempPath + $"\\{type}.brres");
 
@@ -938,7 +950,7 @@ namespace SlipstreamWii
                             string matchingFolder = Path.GetFileName(dir);
                             switch (matchingFolder)
                             {
-                                case "3DModels(NW4R)": // [LHR] Move vehicle LOD to, MP vehicles usually have 2 or three
+                                case "3DModels(NW4R)": // [LHR] Move vehicle LODs to MP vehicle, they usually have 2 or three models
                                     if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Idk if this is the best solution, ykw this works
                                     {
                                         Directory.CreateDirectory(tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)");
@@ -1124,10 +1136,11 @@ namespace SlipstreamWii
         private void RefreshVehicleGenerationList()
         {
             vehicleGeneratorList.Items.Clear();
-            vehicleGeneratorList.Items.Add("Multiplayer Vehicle Models", true); // [LHR] Changed to proper multiplayer vehicle models. Duplicating the singleplayer archives causes the MP models to t-pose and crash when played by a player.
+            vehicleGeneratorList.Items.Add("Multiplayer Vehicle Models", true); // [LHR] Changed to proper multiplayer vehicle models. Duplicating the singleplayer archives causes the CPU models to t-pose and crash when played by a player.
             vehicleGeneratorList.Items.Add("Colored Standard Vehicle Models", true);
-            //vehicleGeneratorList.Items.Add("LZMA Compression (Aurora+MKW-SP+LE-CODE)", false); // [LHR] Added LZMA SZS compression for Aurora, MKW-SP, and LE-CODE (COMING SOON)
-            //vehicleGeneratorList.Items.Add("MKW-SP Layered (_Dif) Archive", false); // [LHR] Add support for making _Dif archives for MKW-SP. (COMING SOON)
+            vehicleGeneratorList.Items.Add("LZMA U8 Compression (Aurora+MKW-SP+LE-CODE)", false); // [LHR] Added standalone LZMA+U8 as .SZS export for Aurora, MKW-SP, and LE-CODE, uses modified WSZST
+            //vehicleGeneratorList.Items.Add("MKW-SP Layered Export", false); // [LHR] Add support for making _Dif archives for MKW-SP with only modified assets (Award + Driver + UI), saving a lot less space. (COMING SOON)
+            //vehicleGeneratorList.Items.Add("No Export Folders", false); //[LHR] Export the mod without folders and combine Demo/Award.szs with Scene/UI/Award.szs, use with mods specific to one directory like CTGP-R (COMING SOON)
             foreach (string vehicleType in vehicleTypes)
             {
                 vehicleGeneratorList.Items.Add($"{vehicleType}s", true);
@@ -1363,8 +1376,7 @@ namespace SlipstreamWii
                     break;
                 case cmdType.CreateFile:
                     toolpath = "SzsTools\\wszst.exe";
-                    /*if (vehicleGeneratorList.GetItemChecked(2)) command = "CREATE --lzma"; // [LHR] Soon
-                    else */command = "CREATE";
+                    command = vehicleGeneratorList.GetItemChecked(2) ? "CREATE --lzma" : "CREATE"; //[LHR] LZMA create sets the extension to .LZMA, modified the exe to output .SZS instead.
                     break;
                 case cmdType.DecodeBMG:
                     toolpath = "SzsTools\\wbmgt.exe";
