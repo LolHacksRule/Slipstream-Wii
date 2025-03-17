@@ -681,7 +681,13 @@ namespace SlipstreamWii
 
                     // Create final folder to move all directories to
                     Directory.CreateDirectory(tempPath + $"\\{type}_brres.d");
-                    if (vehicleGeneratorList.GetItemChecked(0)) Directory.CreateDirectory(tempPath + $"\\{type}_4p_brres.d"); //[LHR] Make 4p vehicle archive
+                    Directory.CreateDirectory(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)");  //[LHR] Code cleanup, don't do the folder check multiple times.
+
+                    if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] Make 4p vehicle archive
+                    {
+                        Directory.CreateDirectory(tempPath + $"\\{type}_4p_brres.d");
+                        Directory.CreateDirectory(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)");
+                    }
 
                     // If a default driver.brres exists, Extract it and move it's files into the base
                     if (Directory.Exists(tempPath + "\\sample.d\\driver.brres.d"))
@@ -693,20 +699,12 @@ namespace SlipstreamWii
                             {
                                 // move LOD files into 3DModels Folder
                                 foreach (string file in Directory.GetFiles(dir))
-                                {
-                                    if (!Directory.Exists(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)")) Directory.CreateDirectory(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)");
-                                    if (vehicleGeneratorList.GetItemChecked(0)) if (!Directory.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)")) Directory.CreateDirectory(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)");
                                     File.Copy(file, tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\{Path.GetFileName(file)}");
-                                    if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(file, tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\{Path.GetFileName(file)}");
-                                }
                             }
                             else if (matchingFolder == $"CPU_{type}" && vehicleGeneratorList.GetItemChecked(0)) // [LHR] Move CPU files into seperate archive's 3DModels Folder
                             {
                                 foreach (string file in Directory.GetFiles(dir))
-                                {
-                                    if (!Directory.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)")) Directory.CreateDirectory(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)");
                                     File.Move(file, tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\{Path.GetFileName(file)}");
-                                }
                             }
                             else if (!matchingFolder.StartsWith("LOD_") && (!matchingFolder.StartsWith("CPU_") && vehicleGeneratorList.GetItemChecked(0)))
                             {
@@ -719,15 +717,22 @@ namespace SlipstreamWii
                     {
                         string matchingFolder = Path.GetFileName(dir);
                         CopyDirectory(dir, tempPath + $"\\{type}.brres.d\\{matchingFolder}", true);
-                        if (vehicleGeneratorList.GetItemChecked(0)) CopyDirectory(dir, tempPath + $"\\{type}_4p.brres.d\\{matchingFolder}", true); // [LHR] Copy to MP driver as well
                     }
 
-                    if (vehicleGeneratorList.GetItemChecked(0))
+                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Delete stuff not used by MP drivers
                     {
-                        // [LHR] Delete stuff not used by MP drivers
-                        File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model");
-                        Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmTexPat(NW4R)", true);
-                        Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)", true);
+                        // [LHR] LOD models and their downscaled textures
+                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_tx_64")) 
+                            File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_tx_64");
+                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432"))
+                            File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432");
+
+                        // [LHR] Eye textures 1-8, CPUs never move their eyes so this is just a waste of space!
+                        for (int uselessEyeTexIdx = 1; uselessEyeTexIdx < 8; uselessEyeTexIdx++)
+                        {
+                            if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_eye.{uselessEyeTexIdx}"))
+                                File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_eye.{uselessEyeTexIdx}");
+                        }
                     }
 
                     await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}.brres.d", "--brres --no-compress ", true);
@@ -916,7 +921,7 @@ namespace SlipstreamWii
                     // [LHR] Just extract this vehicle, removed redundant code
                     await TaskCMD(cmdType.ExtractFile, tempPath + "\\vehicle.szs", "", true);
 
-                    if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] The same for the multiplayer vehicle
+                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] The same for the multiplayer vehicle
                     {
                         if (File.Exists(mpVehiclePath)) File.Copy(mpVehiclePath, tempPath + "\\mpvehicle.szs", true);
                         else
@@ -1016,7 +1021,15 @@ namespace SlipstreamWii
                 foreach (string mod in allKartModifiers)
                 {
                     progressLabel.Text = $"Building {target.abbrev}-allkart{mod}.szs...";
-                    await TaskCMD(cmdType.CreateFile, tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d", "", true);
+                    // [LHR] Allkart files are huge and break the decompression engine when compressed using LZMA, temporarily disable to use the standard compression if enabled. [TODO] Actually check all assets for this problem.
+                    long sizeChk = new DirectoryInfo(tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d").EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+                    if (sizeChk >= 832256 && vehicleGeneratorList.GetItemChecked(2))
+                    {
+                        vehicleGeneratorList.SetItemChecked(2, false);
+                        await TaskCMD(cmdType.CreateFile, tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d", "", true);
+                        vehicleGeneratorList.SetItemChecked(2, true);
+                    }
+                    else await TaskCMD(cmdType.CreateFile, tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d", "", true);
                     File.Move(tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.szs", outputFolder + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.szs", true);
                     globalProgress.Value++;
                 }
