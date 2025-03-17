@@ -1021,15 +1021,7 @@ namespace SlipstreamWii
                 foreach (string mod in allKartModifiers)
                 {
                     progressLabel.Text = $"Building {target.abbrev}-allkart{mod}.szs...";
-                    // [LHR] Allkart files are huge and break the decompression engine when compressed using LZMA, temporarily disable to use the standard compression if enabled. [TODO] Actually check all assets for this problem.
-                    long sizeChk = new DirectoryInfo(tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d").EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
-                    if (sizeChk >= 832256 && vehicleGeneratorList.GetItemChecked(2))
-                    {
-                        vehicleGeneratorList.SetItemChecked(2, false);
-                        await TaskCMD(cmdType.CreateFile, tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d", "", true);
-                        vehicleGeneratorList.SetItemChecked(2, true);
-                    }
-                    else await TaskCMD(cmdType.CreateFile, tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d", "", true);
+                    await TaskCMD(cmdType.CreateFile, tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d", "", true);
                     File.Move(tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.szs", outputFolder + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.szs", true);
                     globalProgress.Value++;
                 }
@@ -1151,7 +1143,7 @@ namespace SlipstreamWii
             vehicleGeneratorList.Items.Clear();
             vehicleGeneratorList.Items.Add("Multiplayer Vehicle Models", true); // [LHR] Changed to proper multiplayer vehicle models. Duplicating the singleplayer archives causes the CPU models to t-pose and crash when played by a player.
             vehicleGeneratorList.Items.Add("Colored Standard Vehicle Models", true);
-            vehicleGeneratorList.Items.Add("LZMA U8 Compression (Aurora+MKW-SP+LE-CODE)", false); // [LHR] Added standalone LZMA+U8 as .SZS export for Aurora, MKW-SP, and LE-CODE, uses modified WSZST
+            vehicleGeneratorList.Items.Add("LZMA U8 Compression (Aurora+MKW-SP+LE-CODE)", false); // [LHR] Added standalone LZMA+U8 as .SZS export for Aurora, MKW-SP, and LE-CODE, uses modified WSZST, note SZS will be forced on big files (allkart).
             //vehicleGeneratorList.Items.Add("MKW-SP Layered Export", false); // [LHR] Add support for making _Dif archives for MKW-SP with only modified assets (Award + Driver + UI), saving a lot less space. (COMING SOON)
             //vehicleGeneratorList.Items.Add("No Export Folders", false); //[LHR] Export the mod without folders and combine Demo/Award.szs with Scene/UI/Award.szs, use with mods specific to one directory like CTGP-R (COMING SOON)
             foreach (string vehicleType in vehicleTypes)
@@ -1388,8 +1380,9 @@ namespace SlipstreamWii
                     command = "EXTRACT";
                     break;
                 case cmdType.CreateFile:
+                    long sizeChk = new DirectoryInfo(sourcePath).EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length); // [LHR] Allkart files are huge and break the decompression engine when compressed using LZMA, temporarily disable to use the standard compression if enabled. [TODO] Actually check all assets for this problem, for now only the base allkart size is checked.
                     toolpath = "SzsTools\\wszst.exe";
-                    command = vehicleGeneratorList.GetItemChecked(2) ? "CREATE --lzma" : "CREATE"; //[LHR] LZMA create sets the extension to .LZMA, modified the exe to output .SZS instead.
+                    command = (vehicleGeneratorList.GetItemChecked(2) && sizeChk <= 832256) ? "CREATE --lzma" : "CREATE"; //[LHR] LZMA create sets the extension to .LZMA, modified the exe to output .SZS instead.
                     break;
                 case cmdType.DecodeBMG:
                     toolpath = "SzsTools\\wbmgt.exe";
