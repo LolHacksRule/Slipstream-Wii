@@ -13,42 +13,42 @@ path-mkw-files:
 ##### CHARACTERS #####
 Mario | mr | mario | Medium | Simple | 2328
 Luigi | lg | luigi | Medium | Simple | 232f
-Peach | pc | peach | Medium | Complex | 2338
+Peach | pc | peach,peach_bike_suit | Medium | Complex | 2338
 Daisy | ds | daisy | Medium | Complex | 2337
 Yoshi | ys | yoshi | Medium | Simple | 2332
 Birdo | ca | catherine | Medium | Simple | 2339
 Diddy Kong | dd | didy | Medium | Simple | 233a
-Bowser Jr. | jr | koopa_jr | Medium | Simple | 233c
-Medium Male Mii Outfit A | ma_mii_m | mii_suit_a | Medium | Simple
-Medium Female Mii Outfit A | ma_mii_f | mii_suit_a | Medium | Simple
+Bowser Jr. | jr | koopa_jr,koppa_jr | Medium | Simple | 233c
+Medium Male Mii Outfit A | ma_mii_m | mii_suit_a,ma_mii | Medium | Simple
+Medium Female Mii Outfit A | ma_mii_f | mii_suit_a,ma_mii | Medium | Simple
 Medium Male Mii Outfit B | mb_mii_m | mii_suit_b | Medium | Simple
 Medium Female Mii Outfit B | mb_mii_f | mii_suit_b | Medium | Simple
 
 Wario | wr | wario | Large | Simple | 2333
 Waluigi | wl | waluigi | Large | Simple | 232a
-Donkey Kong | dk | donky | Large | Simple | 2331
-Bowser | kp | koopa | Large | Simple | 232b
+Donkey Kong | dk | donky,donkey_kong | Large | Simple | 2331
+Bowser | kp | koopa,koppa | Large | Simple | 232b
 King Boo | kt | teresa | Large | Simple | 233b
-Rosalina | rs | roseta | Large | Complex | 233f
-Funky Kong | fk | funky,fuky | Large | Simple | 233e
+Rosalina | rs | roseta,rosetta | Large | Complex | 233f
+Funky Kong | fk | funky,fuky,funky_kong | Large | Simple | 233e
 Dry Bowser | bk | hone_koopa | Large | Simple | 233d
-Large Male Mii Outfit A | la_mii_m | mii_suit_a | Large | Simple
-Large Female Mii Outfit A | la_mii_f | mii_suit_a | Large | Simple
-Large Male Mii Outfit B | lb_mii_m | mii_suit_b | Large | Simple
-Large Female Mii Outfit B | lb_mii_f | mii_suit_b | Large | Simple
+Large Male Mii Outfit A | la_mii_m | mii_suit_a,la_mii | Large | Simple
+Large Female Mii Outfit A | la_mii_f | mii_suit_a,la_mii | Large | Simple
+Large Male Mii Outfit B | lb_mii_m | mii_suit_b,b_mii_m | Large | Simple
+Large Female Mii Outfit B | lb_mii_f | mii_suit_b,b_mii_f | Large | Simple
 
-Baby Mario | bmr | baby_mario | Small | Simple | 232e
-Baby Luigi | blg | baby_luigi | Small | Simple | 2334
+Baby Mario | bmr | baby_mario,bb_mario | Small | Simple | 232e
+Baby Luigi | blg | baby_luigi,bbluigi | Small | Simple | 2334
 Baby Peach | bpc | baby_peach | Small | Simple | 2329
 Baby Daisy | bds | baby_daisy | Small | Simple | 232c
-Toad | ko | kinopio | Small | Simple | 2330
-Toadette | kk | kinopico | Small | Simple | 2335
-Koopa Troopa | nk | noko | Small | Simple | 2336
+Toad | ko | kinopio,kino | Small | Simple | 2330
+Toadette | kk | kinopico,kinoco | Small | Simple | 2335
+Koopa Troopa | nk | noko,nokonoko | Small | Simple | 2336
 Dry Bones | ka | karon | Small | Simple | 232d
-Small Male Mii Outfit A | sa_mii_m | mii_suit_a | Small | Simple
-Small Female Mii Outfit A | sa_mii_f | mii_suit_a | Small | Simple
-Small Male Mii Outfit B | sb_mii_m | mii_suit_b | Small | Simple
-Small Female Mii Outfit B | sb_mii_f | mii_suit_b | Small | Simple
+Small Male Mii Outfit A | sa_mii_m | mii_suit_a,sa_mii | Small | Simple
+Small Female Mii Outfit A | sa_mii_f | mii_suit_a,sa_mii | Small | Simple
+Small Male Mii Outfit B | sb_mii_m | mii_suit_b,b_mii_m | Small | Simple
+Small Female Mii Outfit B | sb_mii_f | mii_suit_b,b_mii_f | Small | Simple
 
 ##### VEHICLES #####
 Standard Kart M | mdf_kart | Kart | Medium | DefaultTextures

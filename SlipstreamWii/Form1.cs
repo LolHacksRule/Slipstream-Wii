@@ -166,7 +166,7 @@ namespace SlipstreamWii
         }
         private async void SaveSample(string path, MKW_Character target, string mainModelType)
         {
-            vehicleGeneratorList.SetItemChecked(2, false); //[LHR] Temporarily disable LZMA so we don't get an archive unreadable by modding tools
+            //vehicleGeneratorList.SetItemChecked(2, false); // [LHR] Temporarily disable LZMA so we don't get an archive unreadable by modding tools
 
             // Extract a model to a temporary folder to pull files from.
             string folderPath = Path.GetDirectoryName(path) + "\\" + Path.GetFileNameWithoutExtension(path) + ".d";
@@ -248,7 +248,7 @@ namespace SlipstreamWii
 
                 // Save the path of the extracted kart folder
                 string k = tempPath + "\\vehicle.d";
-                string m = tempPath + "\\mpvehicle.d"; //[LHR] MP vehicle add
+                string m = tempPath + "\\mpvehicle.d"; // [LHR] MP vehicle add
 
                 if (Directory.Exists(k))
                 {
@@ -289,14 +289,14 @@ namespace SlipstreamWii
                         if (firstVehicleTypeByPath.ContainsKey(vehiclePath))
                         {
                             string type = firstVehicleTypeByPath[vehiclePath].ToLower().Replace(" ", "_");
-                            await TaskCMD(cmdType.ExtractFile, driverModelPath, "", false); //[LHR] Move the extract calls here for convenience
+                            await TaskCMD(cmdType.ExtractFile, driverModelPath, "", false); // [LHR] Move the extract calls here for convenience
                             if (vehicleGeneratorList.GetItemChecked(0)) await TaskCMD(cmdType.ExtractFile, mpDriverModelPath, "", false);
                             if (complexSampling)
                             {
-                                if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] Add CPU driver model to driving BRRES
+                                if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Add CPU driver model to driving BRRES
                                 {
                                     // [LHR] Ah now that's more like it! No more separate archives with the same texture!
-                                    File.Delete(driverModelPath); //[LHR] Delete the original archive so we can actually compile a new one with the CPU driver
+                                    File.Delete(driverModelPath); // [LHR] Delete the original archive so we can actually compile a new one with the CPU driver
                                     File.Move(mpDriverModelPath + ".d\\3DModels(NW4R)\\model_cpu", driverModelPath + $".d\\3DModels(NW4R)\\model_cpu");
                                     await TaskCMD(cmdType.CreateFile, driverModelPath + ".d", "", true);
                                 }
@@ -317,6 +317,10 @@ namespace SlipstreamWii
                                         Directory.CreateDirectory(folderPath + $"\\driver.brres.d\\3DModels(NW4R)");
                                         File.Copy(driverModelPath + ".d\\3DModels(NW4R)\\model", folderPath + $"\\driver.brres.d\\3DModels(NW4R)\\model", true);
                                     }
+
+                                    if (File.Exists(driverModelPath + ".d\\3DModels(NW4R)\\hair")) // [LHR] Add the hair regardless since it wouldn't be good to exclude it
+                                        File.Copy(driverModelPath + ".d\\3DModels(NW4R)\\hair", folderPath + $"\\driver.brres.d\\3DModels(NW4R)\\hair", true);
+
                                     if (Directory.Exists(driverModelPath + ".d\\Textures(NW4R)"))
                                         Directory.Move(driverModelPath + ".d\\Textures(NW4R)", folderPath + $"\\driver.brres.d\\Textures(NW4R)");
                                 }
@@ -514,10 +518,8 @@ namespace SlipstreamWii
 
             progressLabel.Text = "Building Sample Model...";
             if (File.Exists(path)) File.Delete(path);
-            await TaskCMD(cmdType.CreateFile, folderPath, "", false);
+            await TaskCMD(cmdType.CreateFile, folderPath, "--szs ", true); // [LHR] Forcing the standard SZS+U8 compression regardless of the LZMA flag, if we don't it's not viewable in most modding tools.
 
-            // If the new file was created, delete old directory
-            if (File.Exists(path)) Directory.Delete(folderPath, true);
             globalProgress.Value++;
 
             // Delete Temp folder when all processing is done
@@ -681,12 +683,14 @@ namespace SlipstreamWii
 
                     // Create final folder to move all directories to
                     Directory.CreateDirectory(tempPath + $"\\{type}_brres.d");
-                    Directory.CreateDirectory(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)");  //[LHR] Code cleanup, don't do the folder check multiple times.
+                    Directory.CreateDirectory(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)");  // [LHR] Code cleanup, don't do the folder check multiple times.
 
-                    if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] Make 4p vehicle archive
+                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Make 4p vehicle archive
                     {
                         Directory.CreateDirectory(tempPath + $"\\{type}_4p_brres.d");
                         Directory.CreateDirectory(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)");
+                        //File.Move(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\model_cpu", tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model_cpu");
+                        //Directory.CreateDirectory(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)");
                     }
 
                     // If a default driver.brres exists, Extract it and move it's files into the base
@@ -717,26 +721,67 @@ namespace SlipstreamWii
                     {
                         string matchingFolder = Path.GetFileName(dir);
                         CopyDirectory(dir, tempPath + $"\\{type}.brres.d\\{matchingFolder}", true);
+                        if (vehicleGeneratorList.GetItemChecked(0)) CopyDirectory(dir, tempPath + $"\\{type}_4p.brres.d\\{matchingFolder}", true);
                     }
 
-                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Delete stuff not used by MP drivers
+                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Delete stuff not used by vanilla names of MP drivers, would it be better to just copy what's used?
                     {
+                        /*if (File.Exists(tempPath + $"\\sample.d\\driving_{type}.brres") && !Directory.Exists(tempPath + "\\sample.d\\driver.brres.d")) // [LHR] For complex export
+                        {
+                            // [LHR] Like this?
+                            File.Move(tempPath + $"\\sample.d\\driving_{type}.brres.d\\3DModels(NW4R)\\model_cpu", tempPath + $"\\{type}_4p.brres\\3DModels(NW4R)\\model_cpu", true); //May be redundant, but atm
+                            if (File.Exists(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\lm_0")) File.Copy(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\lm_0", tempPath + $"\\{type}_4p.brres\\Textures(NW4R)\\lm_0", true);
+                            if (File.Exists(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\lm_1")) File.Copy(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\lm_1", tempPath + $"\\{type}_4p.brres\\Textures(NW4R)\\lm_1", true);
+                            for (int iconNameIdx = 0; iconNameIdx < target.iconNames.Length; iconNameIdx++)
+                            {
+                                if (File.Exists(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all"))
+                                    File.Copy(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all", tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all");
+                                if (File.Exists(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\body{String.Join(", ", target.iconNames[iconNameIdx])}"))
+                                    File.Copy(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\body{String.Join(", ", target.iconNames[iconNameIdx])}", tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\body{String.Join(", ", target.iconNames[iconNameIdx])}");
+                                if (File.Exists(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_eye.0"))
+                                    File.Copy(tempPath + $"\\sample.d\\driving_{type}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_eye.0", tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_eye.0");
+                            } 
+                        }*/
+
+                        // [LHR] The old way for simple export, keeping for reference, I'd put this under an else but this would be better for custom filenames.
+
+                        if (File.Exists(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\model_cpu")) File.Delete(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\model_cpu");
+                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model");
+                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\hair")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\hair");
+
+                        if (Directory.Exists(tempPath + $"\\{type}_4p.brres.d\\AnmTexPat(NW4R)")) Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmTexPat(NW4R)", true);
+                        if (Directory.Exists(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)")) Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)", true);
+
                         // [LHR] LOD models and their downscaled textures
-                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_tx_64")) 
-                            File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_tx_64");
+                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model_lod")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model_lod");
+
+                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64"))
+                            File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64");
                         if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432"))
                             File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432");
 
-                        // [LHR] Eye textures 1-8, CPUs never move their eyes so this is just a waste of space!
-                        for (int uselessEyeTexIdx = 1; uselessEyeTexIdx < 8; uselessEyeTexIdx++)
+                        for (int iconNameIdx = 0; iconNameIdx < target.iconNames.Length; iconNameIdx++)
                         {
-                            if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_eye.{uselessEyeTexIdx}"))
-                                File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames)}_eye.{uselessEyeTexIdx}");
+                            if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64"))
+                                File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64");
+                            if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432"))
+                                File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432");
+                            if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432"))
+                                File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432");
+                            if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432"))
+                                File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432");
+                            // [LHR] Eye textures 1-8, CPUs never move their eyes so this is just a waste of space!
+                            for (int uselessEyeTexIdx = 1; uselessEyeTexIdx < 8; uselessEyeTexIdx++)
+                            {
+                                if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_eye.{uselessEyeTexIdx}"))
+                                    File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_eye.{uselessEyeTexIdx}");
+                            }
                         }
+
+                        await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}_4p.brres.d", "--brres --no-compress ", true); // [LHR] Create this anyway since sports bike may be called
                     }
 
                     await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}.brres.d", "--brres --no-compress ", true);
-                    if (vehicleGeneratorList.GetItemChecked(0)) await TaskCMD(cmdType.CreateFile, tempPath + $"\\{type}_4p.brres.d", "--brres --no-compress ", true);
                     Directory.Delete(tempPath + $"\\anims_{type}.brres.d", true);
                     globalProgress.Value++;
                 }
@@ -746,7 +791,8 @@ namespace SlipstreamWii
                 // #############################################################################################
 
                 progressLabel.Text = $"Creating new {charName} brres file(s) for Award.szs...";
-                string awardPath = outputFolder + "\\Demo\\Award.d";
+                //if (vehicleGeneratorList.GetItemChecked(3)) Directory.CreateDirectory(outputFolder + "\\Demo\\Award_Dif.d");
+                string awardPath = outputFolder + /* vehicleGeneratorList.GetItemChecked(3) ? "\\Demo\\Award_Dif.d" : */ "\\Demo\\Award.d";
                 if (Directory.Exists(awardPath))
                 {
 
@@ -806,11 +852,11 @@ namespace SlipstreamWii
                                         {
                                             Directory.Delete(dir, true);
                                         }
-                                        else if (dir.EndsWith("3DModels(NW4R)")) //[LHR] Remove the LOD and MP models
+                                        else if (dir.EndsWith("3DModels(NW4R)")) // [LHR] Remove the LOD, hair and MP models
                                         {
                                             if (File.Exists(dir + "\\model_lod")) File.Delete(dir + "\\model_lod");
-                                            if (vehicleGeneratorList.GetItemChecked(0) && File.Exists(dir + "\\model_cpu"))
-                                                File.Delete(dir + "\\model_cpu");
+                                            if (File.Exists(dir + "\\hair")) File.Delete(dir + "\\hair");
+                                            if (vehicleGeneratorList.GetItemChecked(0) && File.Exists(dir + "\\model_cpu")) File.Delete(dir + "\\model_cpu");
                                         }
                                     }
                                 }
@@ -837,7 +883,8 @@ namespace SlipstreamWii
                 // #############################################################################################
 
                 progressLabel.Text = $"Creating new {charName} brres file for Driver.szs...";
-                string driverPath = outputFolder + "\\Scene\\Model\\Driver.d";
+                //if (vehicleGeneratorList.GetItemChecked(3)) Directory.CreateDirectory(outputFolder + "\\Scene\Model\\Driver_Dif.d");
+                string driverPath = outputFolder + /* + vehicleGeneratorList.GetItemChecked(3) ? "\\Scene\\Model\\Driver_Dif.d" : */ "\\Scene\\Model\\Driver.d";
                 if (Directory.Exists(driverPath))
                 {
                     // Extract Sample's Character Select Animations
@@ -857,7 +904,7 @@ namespace SlipstreamWii
                             foreach (string dir in Directory.GetDirectories(tempPath + "\\sample.d\\driver.brres.d"))
                             {
                                 string matchingFolder = Path.GetFileName(dir);
-                                if (!matchingFolder.StartsWith("LOD_") && (!matchingFolder.StartsWith("CPU_") && vehicleGeneratorList.GetItemChecked(0))) CopyDirectory(dir, tempPath + $"\\DriverMenu.brres.d\\{matchingFolder}", true); //[LHR] Don't copy empty CPU folder to Driver.d
+                                if (!matchingFolder.StartsWith("LOD_") && (!matchingFolder.StartsWith("CPU_") && vehicleGeneratorList.GetItemChecked(0))) CopyDirectory(dir, tempPath + $"\\DriverMenu.brres.d\\{matchingFolder}", true); // [LHR] Don't copy empty CPU folder to Driver.d
                             }
                         }
 
@@ -902,7 +949,7 @@ namespace SlipstreamWii
                     if (File.Exists(tempPath + "\\vehicle.szs")) File.Delete(tempPath + "\\vehicle.szs");
                     if (Directory.Exists(tempPath + "\\vehicle.d")) Directory.Delete(tempPath + "\\vehicle.d", true);
 
-                    if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] Purge them too
+                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Purge them too
                     {
                         if (File.Exists(tempPath + "\\mpvehicle.szs")) File.Delete(tempPath + "\\mpvehicle.szs");
                         if (Directory.Exists(tempPath + "\\mpvehicle.d")) Directory.Delete(tempPath + "\\mpvehicle.d", true);
@@ -937,7 +984,7 @@ namespace SlipstreamWii
                     if (File.Exists(tempPath + $"\\{type}.brres"))
                     {
                         File.Copy(tempPath + $"\\{type}.brres", tempPath + "\\vehicle.d\\driver_model.brres", true);
-                        if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(tempPath + $"\\{type}_4p.brres", tempPath + "\\mpvehicle.d\\driver_model.brres", true); //[LHR] No longer breaks!
+                        if (vehicleGeneratorList.GetItemChecked(0)) File.Copy(tempPath + $"\\{type}_4p.brres", tempPath + "\\mpvehicle.d\\driver_model.brres", true); // [LHR] No longer breaks!
                     }
                     else Debug.WriteLine("Failed to find sample driver type: " + tempPath + $"\\{type}.brres");
 
@@ -963,7 +1010,7 @@ namespace SlipstreamWii
                                         if (File.Exists(dir + "\\handle")) File.Copy(dir + "\\handle", tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)\\handle_lod", true);
                                         File.Copy(dir + "\\shadow", tempPath + "\\gameMPVehicle.brres.d\\3DModels(NW4R)\\shadow", true);
                                     }
-                                    CopyDirectory(dir, tempPath + "\\gameVehicle.brres.d\\3DModels(NW4R)", true); //[LHR] Just copy everything else now
+                                    CopyDirectory(dir, tempPath + "\\gameVehicle.brres.d\\3DModels(NW4R)", true); // [LHR] Just copy everything else now
                                     break;
                                 case "Textures(NW4R)":
                                     if (!Directory.GetDirectories(sampleVehiclePath + ".d").Contains(sampleVehiclePath + ".d\\Menu_Textures(NW4R)"))
@@ -1009,7 +1056,7 @@ namespace SlipstreamWii
 
                     await TaskCMD(cmdType.CreateFile, tempPath + "\\vehicle.d", "", true);
                     File.Copy(tempPath + "\\vehicle.szs", outputFolder + $"\\Race\\Kart\\{vehicles[keysToCheck[i]].abbrev}-{target.abbrev}.szs", true);
-                    if (vehicleGeneratorList.GetItemChecked(0)) //[LHR] Actually make proper multiplayer archives
+                    if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Actually make proper multiplayer archives
                     {
                         await TaskCMD(cmdType.CreateFile, tempPath + "\\mpvehicle.d", "", true);
                         File.Copy(tempPath + "\\mpvehicle.szs", outputFolder + $"\\Race\\Kart\\{vehicles[keysToCheck[i]].abbrev}-{target.abbrev}_4.szs", true);
@@ -1145,7 +1192,7 @@ namespace SlipstreamWii
             vehicleGeneratorList.Items.Add("Colored Standard Vehicle Models", true);
             vehicleGeneratorList.Items.Add("LZMA U8 Compression (Aurora+MKW-SP+LE-CODE)", false); // [LHR] Added standalone LZMA+U8 as .SZS export for Aurora, MKW-SP, and LE-CODE, uses modified WSZST, note SZS will be forced on big files (allkart).
             //vehicleGeneratorList.Items.Add("MKW-SP Layered Export", false); // [LHR] Add support for making _Dif archives for MKW-SP with only modified assets (Award + Driver + UI), saving a lot less space. (COMING SOON)
-            //vehicleGeneratorList.Items.Add("No Export Folders", false); //[LHR] Export the mod without folders and combine Demo/Award.szs with Scene/UI/Award.szs, use with mods specific to one directory like CTGP-R (COMING SOON)
+            //vehicleGeneratorList.Items.Add("No Export Folders", false); // [LHR] Export the mod without folders and combine Demo/Award.szs with Scene/UI/Award.szs, use with mods specific to one directory like CTGP-R (COMING SOON)
             foreach (string vehicleType in vehicleTypes)
             {
                 vehicleGeneratorList.Items.Add($"{vehicleType}s", true);
@@ -1382,7 +1429,7 @@ namespace SlipstreamWii
                 case cmdType.CreateFile:
                     long sizeChk = new DirectoryInfo(sourcePath).EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length); // [LHR] Allkart files are huge and break the decompression engine when compressed using LZMA, temporarily disable to use the standard compression if enabled. [TODO] Actually check all assets for this problem, for now only the base allkart size is checked.
                     toolpath = "SzsTools\\wszst.exe";
-                    command = (vehicleGeneratorList.GetItemChecked(2) && sizeChk <= 832256) ? "CREATE --lzma" : "CREATE"; //[LHR] LZMA create sets the extension to .LZMA, modified the exe to output .SZS instead.
+                    command = (vehicleGeneratorList.GetItemChecked(2) && sizeChk <= 832256) ? "CREATE --lzma" : "CREATE"; // [LHR] LZMA create sets the extension to .LZMA, modified the exe to output .SZS instead.
                     break;
                 case cmdType.DecodeBMG:
                     toolpath = "SzsTools\\wbmgt.exe";
