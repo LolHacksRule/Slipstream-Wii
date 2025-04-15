@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics;
 using System.Drawing;
 using System.Xml.Linq;
 
@@ -861,21 +862,21 @@ namespace SlipstreamWii
                                     }
 
                                     // [LHR] Delete their textures too
-                                    if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64"))
-                                        File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64");
-                                    if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432"))
-                                        File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432");
+                                    if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64"))
+                                        File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64");
+                                    if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432"))
+                                        File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432");
 
                                     for (int iconNameIdx = 0; iconNameIdx < target.iconNames.Length; iconNameIdx++)
                                     {
-                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64"))
-                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64");
-                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432"))
-                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432");
-                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432"))
-                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432");
-                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432"))
-                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432");
+                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64"))
+                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64");
+                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432"))
+                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432");
+                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432"))
+                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432");
+                                        if (File.Exists(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432"))
+                                            File.Delete(tempPath + $"\\{target.abbrev}{mod}.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432");
                                     }
                                 }
                                 else Directory.CreateDirectory(tempPath + $"\\{target.abbrev}{mod}.brres.d");
@@ -923,6 +924,24 @@ namespace SlipstreamWii
                             {
                                 string matchingFolder = Path.GetFileName(dir);
                                 if (!matchingFolder.StartsWith("LOD_") && (!matchingFolder.StartsWith("CPU_") && vehicleGeneratorList.GetItemChecked(0))) CopyDirectory(dir, tempPath + $"\\DriverMenu.brres.d\\{matchingFolder}", true); // [LHR] Don't copy empty CPU folder to Driver.d
+                            }
+
+                            // [LHR] Delete their textures here too
+                            if (File.Exists(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64"))
+                                File.Delete(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64");
+                            if (File.Exists(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432"))
+                                File.Delete(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_6432");
+
+                            for (int iconNameIdx = 0; iconNameIdx < target.iconNames.Length; iconNameIdx++)
+                            {
+                                if (File.Exists(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64"))
+                                    File.Delete(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_64");
+                                if (File.Exists(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432"))
+                                    File.Delete(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_tx_6432");
+                                if (File.Exists(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432"))
+                                    File.Delete(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432");
+                                if (File.Exists(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432"))
+                                    File.Delete(tempPath + $"\\DriverMenu.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432");
                             }
                         }
 
