@@ -433,7 +433,7 @@ namespace SlipstreamWii
                         foreach (string dir in Directory.GetDirectories(tempPath + $"\\Award.d\\{target.abbrev}{mod}.brres.d"))
                         {
                             string matchingFolder = Path.GetFileName(dir);
-                            if (matchingFolder != "3DModels(NW4R)" && matchingFolder != "Textures(NW4R)")
+                            if (matchingFolder != "3DModels(NW4R)" && matchingFolder != "Textures(NW4R)") // [LHR] Debating if we should combine award models
                             {
                                 Directory.Move(dir, folderPath + $"\\award{mod}.brres.d\\{matchingFolder}");
                             }
@@ -561,7 +561,7 @@ namespace SlipstreamWii
                 "Title"
             };
             string[] allKartModifiers = new string[2] { "", "_BT" };
-            globalProgress.Maximum = 4 + allIconLocations.Length;
+            globalProgress.Maximum = 4 + (vehicleGeneratorList.GetItemChecked(3) || vehicleGeneratorList.GetItemChecked(4) ? allIconLocations.Length : 0);
             globalProgress.Value++;
             progressLabel.Text = "Preparing output folder...";
             if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
@@ -572,47 +572,51 @@ namespace SlipstreamWii
             Directory.CreateDirectory(outputFolder + "\\Scene");
             Directory.CreateDirectory(outputFolder + "\\Scene\\Model");
             Directory.CreateDirectory(outputFolder + "\\Scene\\Model\\Kart");
-            Directory.CreateDirectory(outputFolder + "\\Scene\\UI");
+            if (vehicleGeneratorList.GetItemChecked(3) || vehicleGeneratorList.GetItemChecked(4)) Directory.CreateDirectory(outputFolder + "\\Scene\\UI"); //[LHR] Check for UI assets
             globalProgress.Value++;
 
-            foreach (string iconLocation in allIconLocations)
+            if (vehicleGeneratorList.GetItemChecked(3) || vehicleGeneratorList.GetItemChecked(4))
             {
-                string name = iconLocation.Split(", ")[0];
-                progressLabel.Text = $"Extracting UI SZS Files {name}(_{targetLanguageBox.Text}).szs...";
-                if (File.Exists(mkwFilePath + $"\\Scene\\UI\\{name}.szs"))
+                foreach (string iconLocation in allIconLocations)
                 {
-                    // Extract UI Textures SZS
-                    File.Copy(mkwFilePath + $"\\Scene\\UI\\{name}.szs", outputFolder + $"\\Scene\\UI\\{name}.szs", true);
-                    await TaskCMD(cmdType.ExtractFile, outputFolder + $"\\Scene\\UI\\{name}.szs", "", true);
+                    string name = iconLocation.Split(", ")[0];
+                    if (File.Exists(mkwFilePath + $"\\Scene\\UI\\{name}.szs") && vehicleGeneratorList.GetItemChecked(3))
+                    {
+                        // Extract UI Textures SZS
+                        progressLabel.Text = $"Extracting UI SZS File {name}.szs...";
+                        File.Copy(mkwFilePath + $"\\Scene\\UI\\{name}.szs", outputFolder + $"\\Scene\\UI\\{name}.szs", true);
+                        await TaskCMD(cmdType.ExtractFile, outputFolder + $"\\Scene\\UI\\{name}.szs", "", true);
+                    }
+                    if (File.Exists(mkwFilePath + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs") && vehicleGeneratorList.GetItemChecked(4))
+                    {
+                        // Extract UI Language SZS
+                        progressLabel.Text = $"Extracting Localized UI SZS File {name}(_{targetLanguageBox.Text}).szs...";
+                        File.Copy(mkwFilePath + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs", outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs", true);
+                        await TaskCMD(cmdType.ExtractFile, outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs", "", true);
+                    }
+                    globalProgress.Value++;
                 }
-                if (File.Exists(mkwFilePath + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs"))
-                {
-                    // Extract UI Language SZS
-                    File.Copy(mkwFilePath + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs", outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs", true);
-                    await TaskCMD(cmdType.ExtractFile, outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.szs", "", true);
-                }
-                globalProgress.Value++;
-            }
 
-            // Get the common.bmg in Race_U.szs
-            if (File.Exists(outputFolder + $"\\Scene\\UI\\Race_{targetLanguageBox.Text}.d\\message\\Common.bmg"))
-            {
-                string bmgPath = AppDomain.CurrentDomain.BaseDirectory + "\\Common";
-                File.Copy(outputFolder + $"\\Scene\\UI\\Race_{targetLanguageBox.Text}.d\\message\\Common.bmg", bmgPath + ".bmg", true);
-                if (File.Exists(bmgPath + ".txt")) File.Delete(bmgPath + ".txt");
-                await TaskCMD(cmdType.DecodeBMG, bmgPath + ".bmg", "", true);
+                // Get the common.bmg in Race_U.szs
+                if (File.Exists(outputFolder + $"\\Scene\\UI\\Race_{targetLanguageBox.Text}.d\\message\\Common.bmg") && vehicleGeneratorList.GetItemChecked(4))
+                {
+                    string bmgPath = AppDomain.CurrentDomain.BaseDirectory + "\\Common";
+                    File.Copy(outputFolder + $"\\Scene\\UI\\Race_{targetLanguageBox.Text}.d\\message\\Common.bmg", bmgPath + ".bmg", true);
+                    if (File.Exists(bmgPath + ".txt")) File.Delete(bmgPath + ".txt");
+                    await TaskCMD(cmdType.DecodeBMG, bmgPath + ".bmg", "", true);
+                }
             }
 
             // Copy and Extract Driver and Award Files
             Process extract = new Process();
-            progressLabel.Text = "Extracting Driver.szs...";
+            progressLabel.Text = "Extracting Demo/Driver.szs...";
             if (File.Exists(mkwFilePath + $"\\Scene\\Model\\Driver.szs"))
             {
                 File.Copy(mkwFilePath + $"\\Scene\\Model\\Driver.szs", outputFolder + $"\\Scene\\Model\\Driver.szs", true);
                 await TaskCMD(cmdType.ExtractFile, outputFolder + $"\\Scene\\Model\\Driver.szs", "", true);
             }
             globalProgress.Value++;
-            progressLabel.Text = "Extracting Award.szs...";
+            progressLabel.Text = "Extracting Demo/Award.szs...";
             if (File.Exists(mkwFilePath + $"\\Demo\\Award.szs"))
             {
                 File.Copy(mkwFilePath + $"\\Demo\\Award.szs", outputFolder + $"\\Demo\\Award.szs", true);
@@ -650,7 +654,7 @@ namespace SlipstreamWii
                 }
 
                 globalProgress.Value = 0;
-                globalProgress.Maximum = 4 + allKartModifiers.Length + vehicleTypes.Count + keysToCheck.Count + allIconLocations.Length;
+                globalProgress.Maximum = 4 + allKartModifiers.Length + vehicleTypes.Count + keysToCheck.Count + (vehicleGeneratorList.GetItemChecked(3) || vehicleGeneratorList.GetItemChecked(4) ? allIconLocations.Length : 0);
 
                 // Extract sample to Temp folder
                 if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
@@ -792,17 +796,17 @@ namespace SlipstreamWii
                 // #############################################################################################
 
                 progressLabel.Text = $"Creating new {charName} brres file(s) for Award.szs...";
-                //if (vehicleGeneratorList.GetItemChecked(3)) Directory.CreateDirectory(outputFolder + "\\Demo\\Award_Dif.d");
-                string awardPath = outputFolder + /* vehicleGeneratorList.GetItemChecked(3) ? "\\Demo\\Award_Dif.d" : */ "\\Demo\\Award.d";
+                //if (vehicleGeneratorList.GetItemChecked(5)) Directory.CreateDirectory(outputFolder + "\\Demo\\Award_Dif.d");
+                string awardPath = outputFolder + /* vehicleGeneratorList.GetItemChecked(5) ? "\\Demo\\Award_Dif.d" : */ "\\Demo\\Award.d";
                 if (Directory.Exists(awardPath))
                 {
 
                     // Get replacement targets
                     List<string> complexAwardSampling = new List<string>();
                     if (File.Exists(awardPath + $"\\{target.abbrev}.brres")) complexAwardSampling.Add("kart|");
-                    else Debug.WriteLine($"Failed to find {target.abbrev}.brres in Award.szs");
+                    else Debug.WriteLine($"Failed to find {target.abbrev}.brres in Demo/Award.szs");
                     if (File.Exists(awardPath + $"\\{target.abbrev}3.brres")) complexAwardSampling.Add("bike|3");
-                    else Debug.WriteLine($"Failed to find {target.abbrev}3.brres in Award.szs");
+                    else Debug.WriteLine($"Failed to find {target.abbrev}3.brres in Demo/Award.szs");
 
                     // Extract Sample's Award Animations.
                     foreach (string award in complexAwardSampling)
@@ -902,8 +906,8 @@ namespace SlipstreamWii
                 // #############################################################################################
 
                 progressLabel.Text = $"Creating new {charName} brres file for Driver.szs...";
-                //if (vehicleGeneratorList.GetItemChecked(3)) Directory.CreateDirectory(outputFolder + "\\Scene\Model\\Driver_Dif.d");
-                string driverPath = outputFolder + /* + vehicleGeneratorList.GetItemChecked(3) ? "\\Scene\\Model\\Driver_Dif.d" : */ "\\Scene\\Model\\Driver.d";
+                //if (vehicleGeneratorList.GetItemChecked(5)) Directory.CreateDirectory(outputFolder + "\\Scene\Model\\Driver_Dif.d");
+                string driverPath = outputFolder + /* + vehicleGeneratorList.GetItemChecked(5) ? "\\Scene\\Model\\Driver_Dif.d" : */ "\\Scene\\Model\\Driver.d";
                 if (Directory.Exists(driverPath))
                 {
                     // Extract Sample's Character Select Animations
@@ -1110,43 +1114,45 @@ namespace SlipstreamWii
                     globalProgress.Value++;
                 }
 
-                // Duplicate and extract each icon file and replace the icons that already exist
-                foreach (string location in allIconLocations)
+                if (vehicleGeneratorList.GetItemChecked(3)) //[LHR] Another check
                 {
-                    string[] loc = location.Split(", ", StringSplitOptions.TrimEntries);
-                    string smallIconPath = tempPath + $"\\sample.d\\st_icon_32x32.tpl";
-                    string largeIconPath = tempPath + $"\\sample.d\\tt_icon_64x64.tpl";
-                    progressLabel.Text = $"Importing icon(s) into {loc[0]}.szs...";
-                    if (loc.Length <= 1)
+                    // Duplicate and extract each icon file and replace the icons that already exist
+                    foreach (string location in allIconLocations)
                     {
-                        globalProgress.Value++;
-                        continue;
-                    }
-                    string[] iconFolders = loc[1].Split("|", StringSplitOptions.TrimEntries);
-                    foreach (string folderName in iconFolders)
-                    {
-                        foreach (string driverName in target.iconNames)
+                        string[] loc = location.Split(", ", StringSplitOptions.TrimEntries);
+                        string smallIconPath = tempPath + $"\\sample.d\\st_icon_32x32.tpl";
+                        string largeIconPath = tempPath + $"\\sample.d\\tt_icon_64x64.tpl";
+                        progressLabel.Text = $"Importing icon(s) into {loc[0]}.szs...";
+                        if (loc.Length <= 1)
                         {
-                            string timgPath = outputFolder + $"\\Scene\\UI\\{loc[0]}.d\\{folderName}\\timg";
-                            if (Directory.Exists(timgPath))
-                            {
-                                if (File.Exists(timgPath + $"\\st_{driverName}_32x32.tpl") && File.Exists(smallIconPath))
-                                {
-                                    File.Copy(smallIconPath, timgPath + $"\\st_{driverName}_32x32.tpl", true);
-                                }
-                                if (File.Exists(timgPath + $"\\tt_{driverName}_64x64.tpl") && File.Exists(largeIconPath))
-                                {
-                                    File.Copy(largeIconPath, timgPath + $"\\tt_{driverName}_64x64.tpl", true);
-                                }
-                            }
-                            else Debug.WriteLine("Failed to find icon's timg folder at: " + timgPath);
+                            globalProgress.Value++;
+                            continue;
                         }
+                        string[] iconFolders = loc[1].Split("|", StringSplitOptions.TrimEntries);
+                        foreach (string folderName in iconFolders)
+                        {
+                            foreach (string driverName in target.iconNames)
+                            {
+                                string timgPath = outputFolder + $"\\Scene\\UI\\{loc[0]}.d\\{folderName}\\timg";
+                                if (Directory.Exists(timgPath))
+                                {
+                                    if (File.Exists(timgPath + $"\\st_{driverName}_32x32.tpl") && File.Exists(smallIconPath))
+                                    {
+                                        File.Copy(smallIconPath, timgPath + $"\\st_{driverName}_32x32.tpl", true);
+                                    }
+                                    if (File.Exists(timgPath + $"\\tt_{driverName}_64x64.tpl") && File.Exists(largeIconPath))
+                                    {
+                                        File.Copy(largeIconPath, timgPath + $"\\tt_{driverName}_64x64.tpl", true);
+                                    }
+                                }
+                                else Debug.WriteLine("Failed to find icon's timg folder at: " + timgPath);
+                            }
+                        }
+                        globalProgress.Value++;
                     }
-                    globalProgress.Value++;
                 }
-
                 // Overwrite the name in the common.txt in Temp
-                if (Directory.Exists(tempPath + "\\sample.d\\name"))
+                if (Directory.Exists(tempPath + "\\sample.d\\name") && vehicleGeneratorList.GetItemChecked(4))
                 {
                     foreach (string namePath in Directory.GetFiles(tempPath + "\\sample.d\\name"))
                     {
@@ -1156,54 +1162,60 @@ namespace SlipstreamWii
             }
 
             globalProgress.Value = 0;
-            globalProgress.Maximum = 3 + allIconLocations.Length;
+            globalProgress.Maximum = 3 + (vehicleGeneratorList.GetItemChecked(3) || vehicleGeneratorList.GetItemChecked(4) ? allIconLocations.Length : 0);
 
             // Repack all the brres files in the output folder
-            progressLabel.Text = "Repacking driver.szs...";
+            progressLabel.Text = "Repacking Scene/Model/Driver.szs...";
             if (Directory.Exists(outputFolder + "\\Scene\\Model\\Driver.d"))
             {
                 await TaskCMD(cmdType.CreateFile, outputFolder + "\\Scene\\Model\\Driver.d", "", true);
             }
             globalProgress.Value++;
 
-            progressLabel.Text = "Repacking Award.szs...";
+            progressLabel.Text = "Repacking Demo/Award.szs...";
             if (Directory.Exists(outputFolder + "\\Demo\\Award.d"))
             {
                 await TaskCMD(cmdType.CreateFile, outputFolder + "\\Demo\\Award.d", "", true);
             }
             globalProgress.Value++;
 
-            // Create new BMG to insert into the language szs files
-            progressLabel.Text = "Creating Common.bmg...";
-            if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Common.txt"))
+            if (vehicleGeneratorList.GetItemChecked(3) || vehicleGeneratorList.GetItemChecked(4)) //[LHR] Another check
             {
-                await TaskCMD(cmdType.EncodeBMG, AppDomain.CurrentDomain.BaseDirectory + "\\Common.txt", "", true);
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Common.txt") && vehicleGeneratorList.GetItemChecked(4))
+                {
+                    // Create new BMG to insert into the language szs files
+                    progressLabel.Text = "Creating Common.bmg...";
+                    await TaskCMD(cmdType.EncodeBMG, AppDomain.CurrentDomain.BaseDirectory + "\\Common.txt", "", true);
+                }
+
+                foreach (string iconLocation in allIconLocations)
+                {
+                    string name = iconLocation.Split(", ")[0];
+                    if (Directory.Exists(outputFolder + $"\\Scene\\UI\\{name}.d") && vehicleGeneratorList.GetItemChecked(3))
+                    {
+                        progressLabel.Text = $"Repacking UI SZS file: {name}.szs...";
+                        await TaskCMD(cmdType.CreateFile, outputFolder + $"\\Scene\\UI\\{name}.d", "", true);
+                    }
+                    if (Directory.Exists(outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d") && vehicleGeneratorList.GetItemChecked(4))
+                    {
+                        progressLabel.Text = $"Repacking UI Text SZS file: {name}(_{targetLanguageBox.Text}).szs...";
+                        if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg") &&
+                            File.Exists(outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d\\message\\Common.bmg"))
+                        {
+                            File.Copy(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg", outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d\\message\\Common.bmg", true);
+                        }
+                        await TaskCMD(cmdType.CreateFile, outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d", "", true);
+                    }
+                    globalProgress.Value++;
+                }
+
+                // Clear Temp Folder
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg"))
+                    File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg");
             }
 
             globalProgress.Value++;
-            foreach (string iconLocation in allIconLocations)
-            {
-                string name = iconLocation.Split(", ")[0];
-                progressLabel.Text = $"Repacking UI SZS files: {name}(_{targetLanguageBox.Text}).szs...";
-                if (Directory.Exists(outputFolder + $"\\Scene\\UI\\{name}.d"))
-                {
-                    await TaskCMD(cmdType.CreateFile, outputFolder + $"\\Scene\\UI\\{name}.d", "", true);
-                }
-                if (Directory.Exists(outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d"))
-                {
-                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg") &&
-                        File.Exists(outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d\\message\\Common.bmg"))
-                    {
-                        File.Copy(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg", outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d\\message\\Common.bmg", true);
-                    }
-                    await TaskCMD(cmdType.CreateFile, outputFolder + $"\\Scene\\UI\\{name}_{targetLanguageBox.Text}.d", "", true);
-                }
-                globalProgress.Value++;
-            }
 
-            // Clear Temp Folder
-            if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg"))
-                File.Delete(AppDomain.CurrentDomain.BaseDirectory + "\\Common.bmg");
             if (Directory.Exists(tempPath))
                 Directory.Delete(tempPath, true);
 
@@ -1228,6 +1240,8 @@ namespace SlipstreamWii
             vehicleGeneratorList.Items.Add("Multiplayer Vehicle Models", true); // [LHR] Changed to proper multiplayer vehicle models. Duplicating the singleplayer archives causes the CPU models to t-pose and crash when played by a player.
             vehicleGeneratorList.Items.Add("Colored Standard Vehicle Models", true);
             vehicleGeneratorList.Items.Add("LZMA U8 Compression (Aurora+MKW-SP+LE-CODE)", false); // [LHR] Added standalone LZMA+U8 as .SZS export for Aurora, MKW-SP, and LE-CODE, uses modified WSZST, note SZS will be forced on big files (allkart).
+            vehicleGeneratorList.Items.Add("UI Icons", true); // [LHR] Add toggle for UI assets (UI/*.szs), this is done so users can just export vehicles if they only want them, which would be faster.
+            vehicleGeneratorList.Items.Add("Localized Character Text", true); // [LHR] Add toggle for localized assets (UI/*_*.szs), this is done so users can just export vehicles if they only want them, which would be faster.
             //vehicleGeneratorList.Items.Add("MKW-SP Layered Export", false); // [LHR] Add support for making _Dif archives for MKW-SP with only modified assets (Award + Driver + UI), saving a lot less space. (COMING SOON)
             //vehicleGeneratorList.Items.Add("No Export Folders", false); // [LHR] Export the mod without folders and combine Demo/Award.szs with Scene/UI/Award.szs, use with mods specific to one directory like CTGP-R (COMING SOON)
             foreach (string vehicleType in vehicleTypes)
