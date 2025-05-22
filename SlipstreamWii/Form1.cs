@@ -715,18 +715,29 @@ namespace SlipstreamWii
                                 foreach (string file in Directory.GetFiles(dir))
                                     File.Move(file, tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\{Path.GetFileName(file)}");
                             }
-                            else if (!matchingFolder.StartsWith("LOD_") && (!matchingFolder.StartsWith("CPU_") && vehicleGeneratorList.GetItemChecked(0)))
+                            else if (!matchingFolder.StartsWith("LOD_") && !matchingFolder.StartsWith("CPU_")) // [LHR] We check for MP below instead so CPU drivers aren't included when generating just SP drivers
                             {
                                 CopyDirectory(dir, tempPath + $"\\{type}.brres.d\\{matchingFolder}", true);
                                 if (vehicleGeneratorList.GetItemChecked(0) && matchingFolder != "3DModels(NW4R)") CopyDirectory(dir, tempPath + $"\\{type}_4p.brres.d\\{matchingFolder}", true);
                             }
                         }
                     }
+					
+					// [LHR] Delete L's kart driver unused assets
+					/*if (File.Exists(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\accel")
+						File.Delete(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\accel")
+					if (File.Exists(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\break")
+						File.Delete(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\break")
+					if (File.Exists(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\test_attack_l")
+						File.Delete(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\test_attack_l")
+					if (File.Exists(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\test_attack_r")
+						File.Delete(tempPath + $"\\anims_{type}.brres.d\\AnmChr(NW4R)\\test_attack_r")*/
+					
                     foreach (string dir in Directory.GetDirectories(tempPath + $"\\anims_{type}.brres.d"))
                     {
                         string matchingFolder = Path.GetFileName(dir);
                         CopyDirectory(dir, tempPath + $"\\{type}.brres.d\\{matchingFolder}", true);
-                        if (vehicleGeneratorList.GetItemChecked(0)) CopyDirectory(dir, tempPath + $"\\{type}_4p.brres.d\\{matchingFolder}", true);
+                        //[LHR] Wait why did I commmit this I'm stupid
                     }
 
                     if (vehicleGeneratorList.GetItemChecked(0)) // [LHR] Delete stuff not used by vanilla names of MP drivers, would it be better to just copy what's used?
@@ -750,15 +761,14 @@ namespace SlipstreamWii
 
                         // [LHR] The old way for simple export, keeping for reference, I'd put this under an else but this would be better for custom filenames.
 
-                        if (File.Exists(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\model_cpu")) File.Delete(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\model_cpu");
-                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model");
+                        //if (File.Exists(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\model_cpu")) File.Delete(tempPath + $"\\{type}.brres.d\\3DModels(NW4R)\\model_cpu");
+                        //if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model");
                         if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\hair")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\hair");
 
-                        if (Directory.Exists(tempPath + $"\\{type}_4p.brres.d\\AnmTexPat(NW4R)")) Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmTexPat(NW4R)", true);
-                        if (Directory.Exists(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)")) Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)", true);
+                        if (Directory.Exists(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)")) Directory.Delete(tempPath + $"\\{type}_4p.brres.d\\AnmChr(NW4R)", true); //[LHR] This isn't even used in MP drivers yet stumbled into some drivers! Why is it here?
 
                         // [LHR] LOD models and their downscaled textures
-                        if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model_lod")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model_lod");
+                        //if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model_lod")) File.Delete(tempPath + $"\\{type}_4p.brres.d\\3DModels(NW4R)\\model_lod");
 
                         if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64"))
                             File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.abbrev)}_tx_64");
@@ -775,8 +785,8 @@ namespace SlipstreamWii
                                 File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_all_6432");
                             if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432"))
                                 File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_bike_suit_tx_6432");
-                            // [LHR] Eye textures 1-8, CPUs never move their eyes so this is just a waste of space!
-                            for (int uselessEyeTexIdx = 1; uselessEyeTexIdx < 8; uselessEyeTexIdx++)
+                            // [LHR] Eye textures 0-8, CPUs never move their eyes so this is just a waste of space!
+                            for (int uselessEyeTexIdx = 0; uselessEyeTexIdx < 8; uselessEyeTexIdx++) // [LHR] We went to 0 to save space
                             {
                                 if (File.Exists(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_eye.{uselessEyeTexIdx}"))
                                     File.Delete(tempPath + $"\\{type}_4p.brres.d\\Textures(NW4R)\\{String.Join(", ", target.iconNames[iconNameIdx])}_eye.{uselessEyeTexIdx}");
@@ -1069,7 +1079,7 @@ namespace SlipstreamWii
                                     break;
                                 default:
                                     CopyDirectory(dir, tempPath + $"\\gameVehicle.brres.d\\{matchingFolder}", true);
-                                    if (vehicleGeneratorList.GetItemChecked(0)) CopyDirectory(dir, tempPath + $"\\gameMPVehicle.brres.d\\{matchingFolder}", true);
+                                    if (vehicleGeneratorList.GetItemChecked(0) && matchingFolder != "AnmChr(NW4R)") CopyDirectory(dir, tempPath + $"\\gameMPVehicle.brres.d\\{matchingFolder}", true);
                                     break;
                             }
                         }
