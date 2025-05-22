@@ -1116,7 +1116,7 @@ namespace SlipstreamWii
                 }
 
                 // Build AllKart folders and move them to output folder
-                foreach (string mod in allKartModifiers)
+                foreach (string mod in allKartModifiers) // [LHR] TODO: Fix this for extracting the whole archive and replacing all files instead of just packing selected custom content.
                 {
                     progressLabel.Text = $"Building {target.abbrev}-allkart{mod}.szs...";
                     await TaskCMD(cmdType.CreateFile, tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart{mod}.d", "", true);
