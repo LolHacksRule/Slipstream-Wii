@@ -560,7 +560,8 @@ namespace SlipstreamWii
                 "Race, game_image|result",
                 "Title"
             };
-            string[] allKartModifiers = new string[2] { "", "_BT" };
+            bool BT_Allowed = vehicleGeneratorList.GetItemChecked(1); // [LHR] Moved so it's more convenient even if not placed in the same list
+            string[] allKartModifiers = BT_Allowed ? new string[2] { "", "_BT" } : new string[1] { "" };
             globalProgress.Maximum = 4 + (vehicleGeneratorList.GetItemChecked(3) || vehicleGeneratorList.GetItemChecked(4) ? allIconLocations.Length : 0);
             globalProgress.Value++;
             progressLabel.Text = "Preparing output folder...";
@@ -983,7 +984,6 @@ namespace SlipstreamWii
 
                 // First create new AllKart Folders
                 progressLabel.Text = $"Creating new allkart.szs folder(s) for {charName}...";
-                bool BT_Allowed = vehicleGeneratorList.GetItemChecked(1);
                 Directory.CreateDirectory(tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart.d");
                 if (BT_Allowed) Directory.CreateDirectory(tempPath + $"\\Scene\\Model\\Kart\\{target.abbrev}-allkart_BT.d");
                 if (File.Exists(tempPath + "\\sample.d\\select_kart.brres"))
