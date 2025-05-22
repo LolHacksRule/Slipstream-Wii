@@ -938,7 +938,7 @@ namespace SlipstreamWii
                             foreach (string dir in Directory.GetDirectories(tempPath + "\\sample.d\\driver.brres.d"))
                             {
                                 string matchingFolder = Path.GetFileName(dir);
-                                if (!matchingFolder.StartsWith("LOD_") && (!matchingFolder.StartsWith("CPU_") && vehicleGeneratorList.GetItemChecked(0))) CopyDirectory(dir, tempPath + $"\\DriverMenu.brres.d\\{matchingFolder}", true); // [LHR] Don't copy empty CPU folder to Driver.d
+                                if (!matchingFolder.StartsWith("LOD_") && !matchingFolder.StartsWith("CPU_")) CopyDirectory(dir, tempPath + $"\\DriverMenu.brres.d\\{matchingFolder}", true); // [LHR] Don't copy empty folders to Driver.d
                             }
 
                             // [LHR] Delete their textures here too
